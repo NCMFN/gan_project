@@ -2,11 +2,11 @@ import graphviz
 
 def create_diagram():
     dot = graphviz.Digraph(comment='High-Level ML Pipeline', format='png')
-    dot.attr(rankdir='TB', splines='ortho', nodesep='1.0', ranksep='0.8', dpi='300')
+    dot.attr(rankdir='TB', splines='ortho', nodesep='1.2', ranksep='1.0', dpi='600')
     dot.attr('node', shape='box', style='filled,rounded', fillcolor='#fffcdb',
-             color='#d4c27b', fontname='Helvetica', fontsize='14', fontcolor='#333333',
-             margin='0.4,0.3', penwidth='2.0')
-    dot.attr('edge', color='#666666', penwidth='2.0', arrowsize='0.8')
+             color='#d4c27b', fontname='Helvetica', fontsize='18', fontcolor='#333333',
+             margin='0.5,0.4', penwidth='3.0')
+    dot.attr('edge', color='#666666', penwidth='3.0', arrowsize='1.2')
 
     # Nodes
     dot.node('A', 'Data Sources (Google Drive)')
