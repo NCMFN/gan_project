@@ -42,17 +42,17 @@ def create_diagram():
     # Box coordinates (bottom-left xy)
     nodes = {
         'A': {'text': 'Data Sources\n(Google Drive)', 'xy': (30, 90)},
-        'B': {'text': 'Data Ingestion &\nTimestamp Normalization', 'xy': (30, 76)},
-        'C': {'text': 'Data Integration', 'xy': (30, 62)},
-        'D': {'text': 'Feature Engineering', 'xy': (30, 48)},
+        'B': {'text': 'Data Ingestion &\nTimestamp Normalization', 'xy': (30, 79)},
+        'C': {'text': 'Data Integration', 'xy': (30, 68)},
+        'D': {'text': 'Feature Engineering', 'xy': (30, 57)},
 
-        'E': {'text': 'EDA Visualizations', 'xy': (5, 30)},
-        'F': {'text': 'Train/Test Split\n(80/20, time-ordered)', 'xy': (55, 30)},
+        'E': {'text': 'EDA Visualizations', 'xy': (5, 46)},
+        'F': {'text': 'Train/Test Split\n(80/20, time-ordered)', 'xy': (55, 46)},
 
-        'G': {'text': 'Model Training', 'xy': (55, 14)},
+        'G': {'text': 'Model Training', 'xy': (55, 35)},
 
-        'I': {'text': 'Evaluation &\nDiagnostics', 'xy': (5, -2)},
-        'H': {'text': 'Inference Pipeline', 'xy': (55, -2)},
+        'I': {'text': 'Evaluation &\nDiagnostics', 'xy': (5, 24)},
+        'H': {'text': 'Inference Pipeline', 'xy': (55, 24)},
     }
 
     # Draw nodes
@@ -111,9 +111,9 @@ def create_diagram():
     # Path with waypoints
     # We can fake it with an arrow that goes right, down, then left
     # But FancyArrowPatch is straight. Let's use matplotlib plot for the elbow and an arrow at the end
-    ax.plot([start_C_right[0], 95], [start_C_right[1], start_C_right[1]], color='#666666', lw=2.0)
-    ax.plot([95, 95], [start_C_right[1], end_H_right[1]], color='#666666', lw=2.0)
-    draw_arrow(ax, (95, end_H_right[1]), (end_H_right[0] + 0.5, end_H_right[1]), shrink=2)
+    ax.plot([start_C_right[0], 98], [start_C_right[1], start_C_right[1]], color='#666666', lw=2.0)
+    ax.plot([98, 98], [start_C_right[1], end_H_right[1]], color='#666666', lw=2.0)
+    draw_arrow(ax, (98, end_H_right[1]), (end_H_right[0] + 0.5, end_H_right[1]), shrink=2)
 
     plt.tight_layout()
     plt.savefig('ml_pipeline_architecture.png', bbox_inches='tight')
