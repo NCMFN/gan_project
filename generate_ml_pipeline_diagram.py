@@ -31,9 +31,11 @@ def draw_arrow(ax, start, end, shrink=0):
     ax.add_patch(arrow)
 
 def create_diagram():
-    fig, ax = plt.subplots(figsize=(10, 10))
+    # Adjust figsize to reduce vertical space (height is smaller relative to width)
+    fig, ax = plt.subplots(figsize=(10, 8))
     ax.set_xlim(0, 100)
-    ax.set_ylim(-5, 100)
+    # Adjust y limits to be tighter around the lowest blocks (y=20, so lowest is y=20)
+    ax.set_ylim(23.5, 98.5)
     ax.axis('off')
 
     # Dimensions for boxes
@@ -116,7 +118,7 @@ def create_diagram():
     draw_arrow(ax, (98, end_H_right[1]), (end_H_right[0] + 0.5, end_H_right[1]), shrink=2)
 
     plt.tight_layout()
-    plt.savefig('ml_pipeline_architecture.png', bbox_inches='tight')
+    plt.savefig('ml_pipeline_architecture.png', bbox_inches='tight', pad_inches=0.1)
 
 if __name__ == '__main__':
     create_diagram()
