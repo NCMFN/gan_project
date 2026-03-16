@@ -187,15 +187,18 @@ def create_ml_pipeline_diagram():
     # Overleaf pdflatex often fails with RGBA (transparent) PNGs. Convert to RGB.
     try:
         img = Image.open('DDHPC110_temp.png')
+        # Preserve original DPI info, defaulting to 300 if missing
+        original_dpi = img.info.get('dpi', (300, 300))
+
         if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
             bg = Image.new('RGB', img.size, (255, 255, 255))
             if img.mode == 'RGBA':
                 bg.paste(img, mask=img.split()[3]) # 3 is the alpha channel
             else:
                 bg.paste(img)
-            bg.save('DDHPC110.png', format='png')
+            bg.save('DDHPC110.png', format='png', dpi=original_dpi)
         else:
-            img.save('DDHPC110.png', format='png')
+            img.save('DDHPC110.png', format='png', dpi=original_dpi)
 
         import os
         os.remove('DDHPC110_temp.png')
