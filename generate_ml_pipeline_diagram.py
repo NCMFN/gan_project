@@ -2,6 +2,8 @@ import matplotlib.pyplot as plt
 import matplotlib.patches as patches
 import matplotlib.path as mpath
 
+from PIL import Image
+
 # Apply requested matplotlib configuration
 plt.rcParams.update({
     'font.size': 11,
@@ -12,7 +14,9 @@ plt.rcParams.update({
     'figure.dpi': 300,
     'savefig.dpi': 300,
     'font.family': 'sans-serif',
-    'font.sans-serif': ['DejaVu Sans', 'Helvetica', 'Arial'] # Fallback
+    'font.sans-serif': ['DejaVu Sans', 'Helvetica', 'Arial'], # Fallback
+    'pdf.fonttype': 42, # Embed TrueType fonts in PDF for Overleaf clarity
+    'ps.fonttype': 42
 })
 
 def create_ml_pipeline_diagram():
@@ -150,7 +154,7 @@ def create_ml_pipeline_diagram():
     def draw_cluster(x, y, w, h, label):
         rect = patches.Rectangle(
             (x, y), w, h, fill=False, edgecolor=colors['cluster_border'],
-            lw=1.5, ls='dashed', zorder=1, alpha=0.8
+            lw=1.5, ls='dashed', zorder=1
         )
         ax.add_patch(rect)
         # Position label just above the top-left corner
@@ -172,9 +176,31 @@ def create_ml_pipeline_diagram():
     # ax.set_aspect('equal', adjustable='box')
 
     plt.tight_layout()
-    plt.savefig('ml_pipeline_architecture.png', dpi=300, bbox_inches='tight', pad_inches=0.1)
-    plt.savefig('ml_pipeline_architecture.pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+
+    # Save PDF
+    plt.savefig('DDHPC110.pdf', format='pdf', dpi=300, bbox_inches='tight', pad_inches=0.1)
+
+    # Save PNG
+    plt.savefig('DDHPC110_temp.png', format='png', dpi=300, bbox_inches='tight', pad_inches=0.1)
     plt.close()
+
+    # Overleaf pdflatex often fails with RGBA (transparent) PNGs. Convert to RGB.
+    try:
+        img = Image.open('DDHPC110_temp.png')
+        if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+            bg = Image.new('RGB', img.size, (255, 255, 255))
+            if img.mode == 'RGBA':
+                bg.paste(img, mask=img.split()[3]) # 3 is the alpha channel
+            else:
+                bg.paste(img)
+            bg.save('DDHPC110.png', format='png')
+        else:
+            img.save('DDHPC110.png', format='png')
+
+        import os
+        os.remove('DDHPC110_temp.png')
+    except Exception as e:
+        print(f"Error converting image format: {e}")
 
 if __name__ == "__main__":
     create_ml_pipeline_diagram()
