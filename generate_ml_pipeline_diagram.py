@@ -44,15 +44,15 @@ def create_ml_pipeline_diagram():
 
     # Define node positions (X, Y) centers
     nodes = {
-        'A': {'pos': (1.5, 3), 'text': 'Data Sources\n(Google Drive)', 'type': 'data', 'w': 2.5, 'h': 1.0},
-        'B': {'pos': (5.0, 3), 'text': 'Data Ingestion &\nTimestamp Normalization', 'type': 'prep', 'w': 3.0, 'h': 1.0},
-        'C': {'pos': (8.5, 3), 'text': 'Data Integration', 'type': 'prep', 'w': 2.5, 'h': 1.0},
-        'D': {'pos': (11.5, 3), 'text': 'Feature Engineering', 'type': 'prep', 'w': 2.5, 'h': 1.0},
-        'E': {'pos': (11.5, 5.0), 'text': 'EDA Visualizations', 'type': 'eda', 'w': 2.5, 'h': 1.0},
-        'F': {'pos': (5.0, 1), 'text': 'Train/Test Split\n(80/20, time-ordered)', 'type': 'split', 'w': 2.5, 'h': 1.0},
-        'G': {'pos': (8.5, 1), 'text': 'Model Training', 'type': 'model', 'w': 2.5, 'h': 1.0},
-        'I': {'pos': (11.5, 1), 'text': 'Evaluation &\nDiagnostics', 'type': 'model', 'w': 2.5, 'h': 1.0},
-        'H': {'pos': (14.5, 1), 'text': 'Inference Pipeline', 'type': 'deploy', 'w': 2.5, 'h': 1.0}
+        'A': {'pos': (1.5, 3), 'text': 'Data Sources\n(Google Drive)', 'type': 'data', 'w': 2.9, 'h': 1.2},
+        'B': {'pos': (5.2, 3), 'text': 'Data Ingestion &\nTimestamp Normalization', 'type': 'prep', 'w': 3.5, 'h': 1.2},
+        'C': {'pos': (8.9, 3), 'text': 'Data Integration', 'type': 'prep', 'w': 2.9, 'h': 1.2},
+        'D': {'pos': (12.3, 3), 'text': 'Feature Engineering', 'type': 'prep', 'w': 2.9, 'h': 1.2},
+        'E': {'pos': (12.3, 5.2), 'text': 'EDA Visualizations', 'type': 'eda', 'w': 2.9, 'h': 1.2},
+        'F': {'pos': (5.2, 1), 'text': 'Train/Test Split\n(80/20, time-ordered)', 'type': 'split', 'w': 3.5, 'h': 1.2},
+        'G': {'pos': (8.9, 1), 'text': 'Model Training', 'type': 'model', 'w': 2.9, 'h': 1.2},
+        'I': {'pos': (12.3, 1), 'text': 'Evaluation &\nDiagnostics', 'type': 'model', 'w': 2.9, 'h': 1.2},
+        'H': {'pos': (15.7, 1), 'text': 'Inference Pipeline', 'type': 'deploy', 'w': 2.9, 'h': 1.2}
     }
 
     def draw_node(key, node):
@@ -75,7 +75,7 @@ def create_ml_pipeline_diagram():
         ax.add_patch(box)
 
         ax.text(x, y, node['text'], ha='center', va='center',
-                color=colors['text'], fontsize=11, zorder=4, weight='normal')
+                color=colors['text'], fontsize=16, zorder=4, weight='bold')
 
     for key, node in nodes.items():
         draw_node(key, node)
@@ -159,18 +159,18 @@ def create_ml_pipeline_diagram():
         ax.add_patch(rect)
         # Position label just above the top-left corner
         ax.text(x, y + h + 0.08, label, ha='left', va='bottom',
-                color='#34495E', fontsize=12, weight='bold', zorder=2)
+                color='#34495E', fontsize=18, weight='bold', zorder=2)
 
     # Data Prep Cluster
-    draw_cluster(3.0, 2.2, 10.25, 1.8, 'Data Loading & Preprocessing')
+    draw_cluster(3.0, 2.2, 11.2, 1.8, 'Data Loading & Preprocessing')
 
     # Modeling Cluster
-    draw_cluster(3.25, 0.05, 10.0, 1.8, 'Model Development')
+    draw_cluster(3.25, 0.05, 11.0, 1.8, 'Model Development')
 
     # Deployment Cluster
-    draw_cluster(13.0, 0.05, 3.0, 1.8, 'Deployment')
+    draw_cluster(14.0, 0.05, 3.4, 1.8, 'Deployment')
 
-    ax.set_xlim(0, 16.5)
+    ax.set_xlim(0, 18.0)
     ax.set_ylim(-0.5, 6)
     # Remove aspect='equal' as it distorts exact positioning in inches/figure units
     # ax.set_aspect('equal', adjustable='box')
