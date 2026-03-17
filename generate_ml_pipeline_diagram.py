@@ -151,27 +151,8 @@ def create_ml_pipeline_diagram():
                 arrowprops=dict(arrowstyle="->", color='#A9DFBF', lw=1.5), zorder=2)
 
 
-    def draw_cluster(x, y, w, h, label):
-        rect = patches.Rectangle(
-            (x, y), w, h, fill=False, edgecolor=colors['cluster_border'],
-            lw=1.5, ls='dashed', zorder=1
-        )
-        ax.add_patch(rect)
-        # Position label just above the top-left corner
-        ax.text(x, y + h + 0.08, label, ha='left', va='bottom',
-                color='#34495E', fontsize=18, weight='bold', zorder=2)
-
-    # Data Prep Cluster
-    draw_cluster(3.0, 2.2, 11.2, 1.8, 'Data Loading & Preprocessing')
-
-    # Modeling Cluster
-    draw_cluster(3.25, 0.05, 11.0, 1.8, 'Model Development')
-
-    # Deployment Cluster
-    draw_cluster(14.0, 0.05, 3.4, 1.8, 'Deployment')
-
     ax.set_xlim(0, 18.0)
-    ax.set_ylim(-0.5, 6)
+    ax.set_ylim(0, 5)
     # Remove aspect='equal' as it distorts exact positioning in inches/figure units
     # ax.set_aspect('equal', adjustable='box')
 
