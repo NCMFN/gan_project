@@ -44,15 +44,15 @@ def create_ml_pipeline_diagram():
 
     # Define node positions (X, Y) centers
     nodes = {
-        'A': {'pos': (1.5, 3), 'text': 'Data Sources\n(Google Drive)', 'type': 'data', 'w': 2.9, 'h': 1.2},
-        'B': {'pos': (5.2, 3), 'text': 'Data Ingestion &\nTimestamp Normalization', 'type': 'prep', 'w': 3.5, 'h': 1.2},
-        'C': {'pos': (8.9, 3), 'text': 'Data Integration', 'type': 'prep', 'w': 2.9, 'h': 1.2},
-        'D': {'pos': (12.3, 3), 'text': 'Feature Engineering', 'type': 'prep', 'w': 2.9, 'h': 1.2},
-        'E': {'pos': (12.3, 5.2), 'text': 'EDA Visualizations', 'type': 'eda', 'w': 2.9, 'h': 1.2},
-        'F': {'pos': (5.2, 1), 'text': 'Train/Test Split\n(80/20, time-ordered)', 'type': 'split', 'w': 3.5, 'h': 1.2},
-        'G': {'pos': (8.9, 1), 'text': 'Model Training', 'type': 'model', 'w': 2.9, 'h': 1.2},
-        'I': {'pos': (12.3, 1), 'text': 'Evaluation &\nDiagnostics', 'type': 'model', 'w': 2.9, 'h': 1.2},
-        'H': {'pos': (15.7, 1), 'text': 'Inference Pipeline', 'type': 'deploy', 'w': 2.9, 'h': 1.2}
+        'A': {'pos': (1.5, 3), 'text': 'Data Sources\n(Google Drive)', 'type': 'data', 'w': 3.4, 'h': 1.5},
+        'B': {'pos': (5.2, 3), 'text': 'Data Ingestion &\nTimestamp Normalization', 'type': 'prep', 'w': 3.8, 'h': 1.5},
+        'C': {'pos': (8.9, 3), 'text': 'Data Integration', 'type': 'prep', 'w': 3.4, 'h': 1.5},
+        'D': {'pos': (12.3, 3), 'text': 'Feature Engineering', 'type': 'prep', 'w': 3.4, 'h': 1.5},
+        'E': {'pos': (12.3, 5.2), 'text': 'EDA Visualizations', 'type': 'eda', 'w': 3.4, 'h': 1.5},
+        'F': {'pos': (5.2, 1), 'text': 'Train/Test Split\n(80/20, time-ordered)', 'type': 'split', 'w': 3.8, 'h': 1.5},
+        'G': {'pos': (8.9, 1), 'text': 'Model Training', 'type': 'model', 'w': 3.4, 'h': 1.5},
+        'I': {'pos': (12.3, 1), 'text': 'Evaluation &\nDiagnostics', 'type': 'model', 'w': 3.4, 'h': 1.5},
+        'H': {'pos': (15.7, 1), 'text': 'Inference Pipeline', 'type': 'deploy', 'w': 3.4, 'h': 1.5}
     }
 
     def draw_node(key, node):
@@ -151,8 +151,8 @@ def create_ml_pipeline_diagram():
                 arrowprops=dict(arrowstyle="->", color='#A9DFBF', lw=1.5), zorder=2)
 
 
-    ax.set_xlim(0, 18.0)
-    ax.set_ylim(0, 6.2)
+    ax.set_xlim(-0.5, 18.0)
+    ax.set_ylim(-0.2, 6.2)
     # Remove aspect='equal' as it distorts exact positioning in inches/figure units
     # ax.set_aspect('equal', adjustable='box')
 
