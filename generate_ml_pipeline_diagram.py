@@ -152,7 +152,7 @@ def create_ml_pipeline_diagram():
 
 
     ax.set_xlim(0, 18.0)
-    ax.set_ylim(0, 5)
+    ax.set_ylim(0, 6.2)
     # Remove aspect='equal' as it distorts exact positioning in inches/figure units
     # ax.set_aspect('equal', adjustable='box')
 
