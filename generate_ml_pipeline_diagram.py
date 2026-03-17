@@ -49,7 +49,7 @@ def create_ml_pipeline_diagram():
         'C': {'pos': (8.9, 3), 'text': 'Data Integration', 'type': 'prep', 'w': 3.4, 'h': 1.5},
         'D': {'pos': (12.3, 3), 'text': 'Feature Engineering', 'type': 'prep', 'w': 3.4, 'h': 1.5},
         'E': {'pos': (12.3, 5.2), 'text': 'EDA Visualizations', 'type': 'eda', 'w': 3.4, 'h': 1.5},
-        'F': {'pos': (5.2, 1), 'text': 'Train/Test Split\n(80/20, time-ordered)', 'type': 'split', 'w': 3.8, 'h': 1.5},
+        'F': {'pos': (5.2, 1), 'text': 'Train/Test Split', 'type': 'split', 'w': 3.8, 'h': 1.5},
         'G': {'pos': (8.9, 1), 'text': 'Model Training', 'type': 'model', 'w': 3.4, 'h': 1.5},
         'I': {'pos': (12.3, 1), 'text': 'Evaluation &\nDiagnostics', 'type': 'model', 'w': 3.4, 'h': 1.5},
         'H': {'pos': (15.7, 1), 'text': 'Inference Pipeline', 'type': 'deploy', 'w': 3.4, 'h': 1.5}
