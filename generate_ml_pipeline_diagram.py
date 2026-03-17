@@ -43,16 +43,17 @@ def create_ml_pipeline_diagram():
     }
 
     # Define node positions (X, Y) centers
+    # Moved closer together to reduce arrow lengths, and increased dimensions to fit fontsize 20
     nodes = {
-        'A': {'pos': (2.0, 4), 'text': 'Data Sources\n(Google Drive)', 'type': 'data', 'w': 3.4, 'h': 1.5},
-        'B': {'pos': (6.5, 4), 'text': 'Data Ingestion &\nTimestamp Normalization', 'type': 'prep', 'w': 3.8, 'h': 1.5},
-        'C': {'pos': (10.9, 4), 'text': 'Data Integration', 'type': 'prep', 'w': 3.4, 'h': 1.5},
-        'D': {'pos': (15.3, 4), 'text': 'Feature Engineering', 'type': 'prep', 'w': 3.4, 'h': 1.5},
-        'E': {'pos': (15.3, 6.5), 'text': 'EDA Visualizations', 'type': 'eda', 'w': 3.4, 'h': 1.5},
-        'F': {'pos': (6.5, 1.5), 'text': 'Train/Test Split', 'type': 'split', 'w': 3.8, 'h': 1.5},
-        'G': {'pos': (10.9, 1.5), 'text': 'Model Training', 'type': 'model', 'w': 3.4, 'h': 1.5},
-        'I': {'pos': (15.3, 1.5), 'text': 'Evaluation &\nDiagnostics', 'type': 'model', 'w': 3.4, 'h': 1.5},
-        'H': {'pos': (19.7, 1.5), 'text': 'Inference Pipeline', 'type': 'deploy', 'w': 3.4, 'h': 1.5}
+        'A': {'pos': (2.0, 4.5), 'text': 'Data Sources\n(Google Drive)', 'type': 'data', 'w': 4.0, 'h': 1.8},
+        'B': {'pos': (7.2, 4.5), 'text': 'Data Ingestion &\nTimestamp Normalization', 'type': 'prep', 'w': 5.0, 'h': 1.8},
+        'C': {'pos': (12.4, 4.5), 'text': 'Data Integration', 'type': 'prep', 'w': 4.0, 'h': 1.8},
+        'D': {'pos': (17.6, 4.5), 'text': 'Feature Engineering', 'type': 'prep', 'w': 4.8, 'h': 1.8},
+        'E': {'pos': (17.6, 7.5), 'text': 'EDA Visualizations', 'type': 'eda', 'w': 4.8, 'h': 1.8},
+        'F': {'pos': (7.2, 1.5), 'text': 'Train/Test Split', 'type': 'split', 'w': 5.0, 'h': 1.8},
+        'G': {'pos': (12.4, 1.5), 'text': 'Model Training', 'type': 'model', 'w': 4.0, 'h': 1.8},
+        'I': {'pos': (17.6, 1.5), 'text': 'Evaluation &\nDiagnostics', 'type': 'model', 'w': 4.8, 'h': 1.8},
+        'H': {'pos': (23.0, 1.5), 'text': 'Inference Pipeline', 'type': 'deploy', 'w': 4.4, 'h': 1.8}
     }
 
     def draw_node(key, node):
@@ -75,7 +76,7 @@ def create_ml_pipeline_diagram():
         ax.add_patch(box)
 
         ax.text(x, y, node['text'], ha='center', va='center',
-                color=colors['text'], fontsize=16, zorder=4, weight='bold')
+                color=colors['text'], fontsize=20, zorder=4, weight='bold')
 
     for key, node in nodes.items():
         draw_node(key, node)
@@ -122,8 +123,8 @@ def create_ml_pipeline_diagram():
 
     path_data = [
         (mpath.Path.MOVETO, (cx1, cy1)),
-        (mpath.Path.LINETO, (cx1, 2.75)),
-        (mpath.Path.LINETO, (cx2, 2.75)),
+        (mpath.Path.LINETO, (cx1, 3.0)),
+        (mpath.Path.LINETO, (cx2, 3.0)),
         (mpath.Path.LINETO, (cx2, cy2))
     ]
     codes, verts = zip(*path_data)
@@ -151,8 +152,8 @@ def create_ml_pipeline_diagram():
                 arrowprops=dict(arrowstyle="->", color='#A9DFBF', lw=1.5), zorder=2)
 
 
-    ax.set_xlim(-0.5, 22.0)
-    ax.set_ylim(0, 8.0)
+    ax.set_xlim(-0.5, 26.0)
+    ax.set_ylim(0, 9.5)
     # Remove aspect='equal' as it distorts exact positioning in inches/figure units
     # ax.set_aspect('equal', adjustable='box')
 
