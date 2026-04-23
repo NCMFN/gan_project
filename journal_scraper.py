@@ -19,6 +19,13 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
 }
 
+# Pre-compiled Regex Patterns
+RE_JOURNAL_TITLE = re.compile(r'Journal Title:\s*(.*)')
+RE_PUBLISHER = re.compile(r'Publisher:\s*(.*?)(?:\s+(?:P-|E-)?ISSN|Review|Language|Country|\n|$)')
+RE_ISSN = re.compile(r'(?:P-|E-)?ISSN:\s*([0-9X\-,\s]+)(?:\s+[A-Z][a-z]+|Review|\n|$)')
+RE_REVIEW_TIME = re.compile(r'publishes research articles in (\d+ weeks?)')
+RE_SPLIT_ISSN = re.compile(r'[,\s]+')
+
 def load_apc_data(filepath):
     """Loads the APC XLS file and returns a set of journal names and ISSNs."""
     print(f"Loading APC data from {filepath}...")
@@ -119,7 +126,7 @@ def scrape_journal_details(journal_url, apc_names, apc_issns):
 
         # Journal Title
         # Often in h1 or specific field. Let's try to find "Journal Title:" in text
-        title_match = re.search(r'Journal Title:\s*(.*)', text)
+        title_match = RE_JOURNAL_TITLE.search(text)
         if title_match:
             data['Journal Title'] = title_match.group(1).strip()
         else:
@@ -130,21 +137,21 @@ def scrape_journal_details(journal_url, apc_names, apc_issns):
 
         # Publisher
         # Stop at newline or "ISSN", "P-ISSN", "E-ISSN", "Review", "Language", "Country"
-        pub_match = re.search(r'Publisher:\s*(.*?)(?:\s+(?:P-|E-)?ISSN|Review|Language|Country|\n|$)', text)
+        pub_match = RE_PUBLISHER.search(text)
         if pub_match:
             data['Publisher'] = pub_match.group(1).strip()
 
         # ISSN
         # Try to find explicit ISSN pattern if possible, or stop at next field
         # Text usually has "ISSN: 1234-5678" or "ISSN: 1234-5678, 8765-4321"
-        issn_match = re.search(r'(?:P-|E-)?ISSN:\s*([0-9X\-,\s]+)(?:\s+[A-Z][a-z]+|Review|\n|$)', text)
+        issn_match = RE_ISSN.search(text)
         if issn_match:
             data['ISSN'] = issn_match.group(1).strip()
 
         # Review Time
         # Look for "Journal Publication Time" or "Review Time"
         # "publishes research articles in 12 weeks on an average"
-        time_match = re.search(r'publishes research articles in (\d+ weeks?)', text)
+        time_match = RE_REVIEW_TIME.search(text)
         if time_match:
             data['Review Time'] = time_match.group(1)
         else:
@@ -170,7 +177,7 @@ def scrape_journal_details(journal_url, apc_names, apc_issns):
 
         # Handle multiple ISSNs in the scraped data (e.g. "1234-5678, 8765-4321")
         raw_issn = data['ISSN']
-        issn_candidates = [x.strip().replace('-', '') for x in re.split(r'[,\s]+', raw_issn) if x.strip()]
+        issn_candidates = [x.strip().replace('-', '') for x in RE_SPLIT_ISSN.split(raw_issn) if x.strip()]
         issn_match = any(issn in apc_issns for issn in issn_candidates)
 
         if norm_title in apc_names or issn_match:
