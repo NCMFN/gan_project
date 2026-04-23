@@ -1,0 +1,74 @@
+Loading source data...
+Loading MU Directory...
+Running full execution on 515 journals.
+Starting processing with 10 workers...
+Processed 10/515 journals.
+Processed 20/515 journals.
+Processed 30/515 journals.
+Processed 40/515 journals.
+Processed 50/515 journals.
+Processed 60/515 journals.
+Processed 70/515 journals.
+Processed 80/515 journals.
+Processed 90/515 journals.
+Processed 100/515 journals.
+Processed 110/515 journals.
+Processed 120/515 journals.
+Processed 130/515 journals.
+Processed 140/515 journals.
+Processed 150/515 journals.
+Processed 160/515 journals.
+Processed 170/515 journals.
+Processed 180/515 journals.
+Processed 190/515 journals.
+Processed 200/515 journals.
+Processed 210/515 journals.
+Processed 220/515 journals.
+Processed 230/515 journals.
+Processed 240/515 journals.
+Processed 250/515 journals.
+Processed 260/515 journals.
+Processed 270/515 journals.
+Processed 280/515 journals.
+Processed 290/515 journals.
+Processed 300/515 journals.
+Processed 310/515 journals.
+Processed 320/515 journals.
+Processed 330/515 journals.
+Processed 340/515 journals.
+Processed 350/515 journals.
+Processed 360/515 journals.
+Processed 370/515 journals.
+Processed 380/515 journals.
+Processed 390/515 journals.
+Processed 400/515 journals.
+Processed 410/515 journals.
+Processed 420/515 journals.
+Processed 430/515 journals.
+Processed 440/515 journals.
+Processed 450/515 journals.
+Processed 460/515 journals.
+Processed 470/515 journals.
+Processed 480/515 journals.
+Processed 490/515 journals.
+Processed 500/515 journals.
+Processed 510/515 journals.
+Exporting to 3journals_data.csv and 3journals_data.xlsx...
+Generating visualization...
+
+==================================================
+SUMMARY
+==================================================
+Total Journals Processed: 515
+Data saved to 3journals_data.csv and 3journals_data.xlsx
+Visualization saved to scopus_status_chart.png
+Journals with missing APC: 29
+Journals with missing Review Time: 514
+
+Scopus Status Distribution:
+Scopus Status
+Not Indexed                 295
+Indexed (Source File)       149
+Indexed (Website)            45
+Likely Indexed (Website)     26
+Name: count, dtype: int64
