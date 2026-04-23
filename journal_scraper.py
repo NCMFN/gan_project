@@ -2,6 +2,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 import time
+import concurrent.futures
 import os
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -189,6 +190,33 @@ def scrape_journal_details(journal_url, apc_names, apc_issns):
         print(f"Error scraping {journal_url}: {e}")
         return None
 
+def scrape_all_journals(journal_list, apc_names, apc_issns):
+    scraped_data = []
+    print(f"Scraping details for {len(journal_list)} journals. This may take a while...")
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_journal = {
+            executor.submit(scrape_journal_details, journal['url'], apc_names, apc_issns): journal
+            for journal in journal_list
+        }
+
+        for i, future in enumerate(concurrent.futures.as_completed(future_to_journal)):
+            journal = future_to_journal[future]
+            try:
+                details = future.result()
+                if details:
+                    # If we didn't get the title from page, use the one from link
+                    if details['Journal Title'] == 'Not Available':
+                        details['Journal Title'] = journal['title']
+                    scraped_data.append(details)
+            except Exception as e:
+                print(f"Exception scraping {journal['url']}: {e}")
+
+            if (i + 1) % 10 == 0:
+                print(f"Processed {i + 1}/{len(journal_list)}")
+
+    return scraped_data
+
 def main():
     # 1. Load APC Data
     apc_names, apc_issns = load_apc_data(APC_FILE)
@@ -200,22 +228,7 @@ def main():
         return
 
     # 3. Scrape Details
-    scraped_data = []
-    print(f"Scraping details for {len(journal_list)} journals. This may take a while...")
-
-    for i, journal in enumerate(journal_list):
-        details = scrape_journal_details(journal['url'], apc_names, apc_issns)
-        if details:
-            # If we didn't get the title from page, use the one from link
-            if details['Journal Title'] == 'Not Available':
-                details['Journal Title'] = journal['title']
-            scraped_data.append(details)
-
-        if (i + 1) % 10 == 0:
-            print(f"Processed {i + 1}/{len(journal_list)}")
-
-        # Be polite
-        time.sleep(0.5)
+    scraped_data = scrape_all_journals(journal_list, apc_names, apc_issns)
 
     # 4. Create DataFrame
     df = pd.DataFrame(scraped_data)
