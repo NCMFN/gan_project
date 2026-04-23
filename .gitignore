@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+doaj_journals.csv
+mu_directory_new.xls
+source1_journals.xlsx
