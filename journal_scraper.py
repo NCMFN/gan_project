@@ -1,232 +1,226 @@
 import pandas as pd
 import requests
-from bs4 import BeautifulSoup
+import concurrent.futures
 import time
+import re
 import os
+from bs4 import BeautifulSoup
 import matplotlib.pyplot as plt
 import seaborn as sns
-import re
-from urllib.parse import quote, urlparse, urlunparse
+from urllib.parse import quote
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 # Constants
-BASE_URL = "https://journalsearches.com"
-MAIN_PAGE = f"{BASE_URL}/free-publishing-journals.php"
-APC_FILE = "mu_directory.xls"
-OUTPUT_CSV = "journals_data.csv"
-OUTPUT_XLSX = "journals_data.xlsx"
+DOAJ_CSV_URL = "https://doaj.org/csv"
+DOAJ_CSV_FILE = "doaj_journals.csv"
+MU_DIRECTORY_FILE = "mu_directory_2023.xls"
+OUTPUT_CSV = "Gjournals_data.csv"
+OUTPUT_XLSX = "Gjournals_data.xlsx"
 PLOT_FILE = "scopus_status_chart.png"
-HEADERS = {
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
-}
+BASE_URL = "https://journalsearches.com"
 
-def load_apc_data(filepath):
-    """Loads the APC XLS file and returns a set of journal names and ISSNs."""
-    print(f"Loading APC data from {filepath}...")
+# Setup Session
+def get_session():
+    session = requests.Session()
+    retry = Retry(connect=3, backoff_factor=0.5)
+    adapter = HTTPAdapter(max_retries=retry, pool_connections=100, pool_maxsize=100)
+    session.mount('http://', adapter)
+    session.mount('https://', adapter)
+    session.headers.update({
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    })
+    return session
+
+SESSION = get_session()
+
+def fetch_doaj_journals(limit=None):
+    """Fetches all journals from DOAJ matching the No-APC criteria via CSV dump."""
+    print("Fetching journals from DOAJ CSV dump...")
+
+    # Download CSV if not exists or force update (here we assume check first)
+    # Using streaming download for memory efficiency if needed, but 25MB is small.
     try:
-        # Based on inspection, header is at row 2
-        df = pd.read_excel(filepath, header=2)
-        # Filter for rows where NO# is numeric (actual journals)
-        df = df[pd.to_numeric(df['NO#'], errors='coerce').notnull()]
+        if not os.path.exists(DOAJ_CSV_FILE):
+            print("Downloading DOAJ CSV...")
+            resp = SESSION.get(DOAJ_CSV_URL)
+            resp.raise_for_status()
+            with open(DOAJ_CSV_FILE, 'wb') as f:
+                f.write(resp.content)
 
-        # Normalize names and ISSNs
-        journal_names = set(df['Journal'].astype(str).str.strip().str.lower())
-        issns = set(df['ISSN'].astype(str).str.strip().str.replace('-', ''))
+        print("Reading CSV...")
+        df = pd.read_csv(DOAJ_CSV_FILE)
 
-        print(f"Loaded {len(journal_names)} journals from APC directory.")
-        return journal_names, issns
-    except Exception as e:
-        print(f"Error loading APC data: {e}")
-        return set(), set()
+        # Filter for No APC and No Other Fees
+        # Columns: 'APC', 'Has other fees'
+        # Values expected: 'No'
 
-def get_journal_list():
-    """Scrapes the main page to get a list of journal URLs."""
-    print(f"Fetching main page: {MAIN_PAGE}")
-    try:
-        response = requests.get(MAIN_PAGE, headers=HEADERS)
-        response.raise_for_status()
-        soup = BeautifulSoup(response.content, 'html.parser')
+        # Verify columns exist
+        if 'APC' not in df.columns or 'Has other fees' not in df.columns:
+            print("Error: Expected columns not found in DOAJ CSV")
+            return []
 
-        # The journals are likely in a table or list.
-        # Based on previous view_text_website, it looked like a table.
-        # "S. No. Journal Title Publisher ISSN Review Process"
+        # Filter
+        df_filtered = df[(df['APC'] == 'No') & (df['Has other fees'] == 'No')]
+
+        if limit:
+            df_filtered = df_filtered.head(limit)
 
         journals = []
-        # Find all rows or links. The links to journal details seem to be on the journal title.
-        # Let's try to find all 'a' tags that link to 'journal.php'
+        for _, row in df_filtered.iterrows():
+            title = row['Journal title']
+            publisher = row['Publisher'] if pd.notna(row['Publisher']) else 'Unknown'
+            # ISSN
+            eissn = row['Journal EISSN (online version)']
+            pissn = row['Journal ISSN (print version)']
+            issn = eissn if pd.notna(eissn) else pissn
+            if pd.isna(issn):
+                issn = "Unknown"
 
-        links = soup.find_all('a', href=True)
-        for link in links:
-            href = link['href']
-            if 'journal.php?title=' in href:
-                title = link.get_text(strip=True)
+            journals.append({
+                'Journal Title': str(title).strip(),
+                'Publisher': str(publisher).strip(),
+                'ISSN': str(issn).strip(),
+                'APC': 'Free (DOAJ)'
+            })
 
-                # Handle URL encoding
-                if not href.startswith('http'):
-                    # Split path and query
-                    if '?' in href:
-                        path, query = href.split('?', 1)
-                        # We only want to encode the query values, but here the whole query string is messy?
-                        # It's easier to just quote the whole href path/query if it has spaces
-                        # But wait, 'journal.php?title=foo bar' -> 'journal.php?title=foo%20bar'
-                        # Let's rebuild it properly
-                        if 'title=' in query:
-                            key, val = query.split('title=', 1)
-                            # val might have more params, but usually it's just title at the end here
-                            # Assuming title is the last or only param
-                            encoded_val = quote(val)
-                            href = f"{path}?title={encoded_val}"
-
-                full_url = f"{BASE_URL}/{href}" if not href.startswith('http') else href
-
-                # Check if we already have this url (deduplication)
-                if not any(j['url'] == full_url for j in journals):
-                    journals.append({
-                        'title': title,
-                        'url': full_url
-                    })
-
-        print(f"Found {len(journals)} journals.")
+        print(f"Total DOAJ journals filtered: {len(journals)}")
         return journals
+
     except Exception as e:
-        print(f"Error fetching journal list: {e}")
+        print(f"Error fetching/processing DOAJ CSV: {e}")
         return []
 
-def scrape_journal_details(journal_url, apc_names, apc_issns):
-    """Scrapes details for a single journal."""
-    # print(f"Scraping {journal_url}...")
+def load_mu_directory(filepath):
+    """Loads the MU directory XLS to get a set of verified free journals."""
+    print(f"Loading MU directory from {filepath}...")
     try:
-        response = requests.get(journal_url, headers=HEADERS, timeout=10)
-        response.raise_for_status()
+        # Header at row index 2 (row 3) based on inspection
+        df = pd.read_excel(filepath, header=2)
+        # Normalize
+        journal_names = set(df['Journal'].astype(str).str.strip().str.lower())
+        print(f"Loaded {len(journal_names)} journals from MU directory.")
+        return journal_names
+    except Exception as e:
+        print(f"Error loading MU directory: {e}")
+        return set()
+
+def scrape_details(journal):
+    """Scrapes details for a single journal from journalsearches.com."""
+    title = journal['Journal Title']
+    # Use the journal title to construct the search URL
+    # Note: journalsearches.com expects exact title match often
+    encoded_title = quote(title)
+    url = f"{BASE_URL}/journal.php?title={encoded_title}"
+
+    details = {
+        'Source URL': url,
+        'Review Time': 'Not Available',
+        'Scopus Indexing': 'Not Available',
+        'Quartile': 'Not Available',
+        # Keep original publisher from DOAJ unless we find a better one
+        'Publisher': journal['Publisher']
+    }
+
+    try:
+        response = SESSION.get(url, timeout=10)
+        if response.status_code != 200:
+            return details # Return defaults if page not found
+
         soup = BeautifulSoup(response.content, 'html.parser')
-
-        # Initialize data with placeholders
-        data = {
-            'Journal Title': 'Not Available',
-            'Publisher': 'Not Available',
-            'ISSN': 'Not Available',
-            'Review Time': 'Not Available',
-            'APC': 'Not Available',
-            'Scopus Indexing': 'Not Available',
-            'Source URL': journal_url
-        }
-
-        # Extract fields
-        # Note: The text output showed "Important Metrics" section.
-        # We can look for text patterns or specific classes if we knew them.
-        # Using regex search on text is robust.
-
         text = soup.get_text()
 
-        # Journal Title
-        # Often in h1 or specific field. Let's try to find "Journal Title:" in text
-        title_match = re.search(r'Journal Title:\s*(.*)', text)
-        if title_match:
-            data['Journal Title'] = title_match.group(1).strip()
-        else:
-            # Fallback to H1
-            h1 = soup.find('h1')
-            if h1:
-                data['Journal Title'] = h1.get_text(strip=True)
+        # 1. Review Time
+        # Pattern example: "publishes research articles in 12 weeks on an average"
+        time_match = re.search(r'publishes research articles in\s+(\d+\s+\w+)', text, re.IGNORECASE)
+        if time_match:
+            details['Review Time'] = time_match.group(1)
 
-        # Publisher
-        # Stop at newline or "ISSN", "P-ISSN", "E-ISSN", "Review", "Language", "Country"
+        # 2. Scopus Indexing
+        # Pattern: "Indexed in ... Scopus" or "Scopus Coverage"
+        if "Scopus" in text and ("Indexed in" in text or "Coverage" in text):
+            details['Scopus Indexing'] = "Indexed"
+        else:
+            details['Scopus Indexing'] = "Not Indexed"
+
+        # 3. Publisher
+        # Using regex on cleaned text is better
+        # Look for "Publisher:" followed by text until newline or ISSN/Language keywords
         pub_match = re.search(r'Publisher:\s*(.*?)(?:\s+(?:P-|E-)?ISSN|Review|Language|Country|\n|$)', text)
         if pub_match:
-            data['Publisher'] = pub_match.group(1).strip()
+            cand_pub = pub_match.group(1).strip()
+            if cand_pub and len(cand_pub) < 100: # Sanity check for length
+                details['Publisher'] = cand_pub
 
-        # ISSN
-        # Try to find explicit ISSN pattern if possible, or stop at next field
-        # Text usually has "ISSN: 1234-5678" or "ISSN: 1234-5678, 8765-4321"
-        issn_match = re.search(r'(?:P-|E-)?ISSN:\s*([0-9X\-,\s]+)(?:\s+[A-Z][a-z]+|Review|\n|$)', text)
-        if issn_match:
-            data['ISSN'] = issn_match.group(1).strip()
-
-        # Review Time
-        # Look for "Journal Publication Time" or "Review Time"
-        # "publishes research articles in 12 weeks on an average"
-        time_match = re.search(r'publishes research articles in (\d+ weeks?)', text)
-        if time_match:
-            data['Review Time'] = time_match.group(1)
-        else:
-             # Try "Review Process" table logic if available?
-             # Or look for "Time to First Decision" etc.
-             pass
-
-        # Scopus Indexing
-        # "Indexed in ... Scopus"
-        # "Scopus Coverage: 2017-2025"
-        if "Indexed in" in text and "Scopus" in text:
-            data['Scopus Indexing'] = "Indexed"
-        elif "Scopus Coverage" in text:
-            data['Scopus Indexing'] = "Indexed"
-        else:
-            data['Scopus Indexing'] = "Not Indexed"
-
-        # APC
-        # "does not charge any publication fee"
-        # "Open Access: Yes"
-        # Check against XLS first
-        norm_title = data['Journal Title'].lower().strip()
-
-        # Handle multiple ISSNs in the scraped data (e.g. "1234-5678, 8765-4321")
-        raw_issn = data['ISSN']
-        issn_candidates = [x.strip().replace('-', '') for x in re.split(r'[,\s]+', raw_issn) if x.strip()]
-        issn_match = any(issn in apc_issns for issn in issn_candidates)
-
-        if norm_title in apc_names or issn_match:
-            data['APC'] = "Free (Verified via Directory)"
-        elif "does not charge any publication fee" in text.lower():
-            data['APC'] = "Free (Stated on Website)"
-        elif "publication fee" in text.lower():
-             # extract fee? Hard to generalize.
-             data['APC'] = "Potential Fee"
-        else:
-             data['APC'] = "Unknown"
-
-        return data
+        # 4. Quartile
+        # Look for "Quartile: Q1" or "Q1 (20xx)"
+        q_match = re.search(r'Quartile:\s*(Q[1-4])', text, re.IGNORECASE)
+        if q_match:
+            details['Quartile'] = q_match.group(1)
 
     except Exception as e:
-        print(f"Error scraping {journal_url}: {e}")
-        return None
+        # print(f"Error scraping {title}: {e}")
+        pass
+
+    return details
 
 def main():
-    # 1. Load APC Data
-    apc_names, apc_issns = load_apc_data(APC_FILE)
+    print("Starting Journal Scraper...")
 
-    # 2. Get Journal List
-    journal_list = get_journal_list()
-    if not journal_list:
-        print("No journals found. Exiting.")
+    # 1. Load MU Directory
+    mu_list = load_mu_directory(MU_DIRECTORY_FILE)
+
+    # 2. Fetch DOAJ Journals
+    doaj_journals = fetch_doaj_journals()
+    if not doaj_journals:
+        print("No journals found from DOAJ. Exiting.")
         return
 
-    # 3. Scrape Details
-    scraped_data = []
-    print(f"Scraping details for {len(journal_list)} journals. This may take a while...")
+    # 3. Scrape Details Concurrently
+    print(f"Scraping details for {len(doaj_journals)} journals with 50 workers...")
 
-    for i, journal in enumerate(journal_list):
-        details = scrape_journal_details(journal['url'], apc_names, apc_issns)
-        if details:
-            # If we didn't get the title from page, use the one from link
-            if details['Journal Title'] == 'Not Available':
-                details['Journal Title'] = journal['title']
-            scraped_data.append(details)
+    final_data = []
 
-        if (i + 1) % 10 == 0:
-            print(f"Processed {i + 1}/{len(journal_list)}")
+    with concurrent.futures.ThreadPoolExecutor(max_workers=50) as executor:
+        future_to_journal = {executor.submit(scrape_details, journal): journal for journal in doaj_journals}
 
-        # Be polite
-        time.sleep(0.5)
+        completed = 0
+        total = len(doaj_journals)
+
+        for future in concurrent.futures.as_completed(future_to_journal):
+            journal = future_to_journal[future]
+            try:
+                details = future.result()
+
+                # Merge Data
+                merged = journal.copy()
+                merged.update(details)
+
+                # Refine APC based on MU Directory
+                # Check by Title
+                norm_title = merged['Journal Title'].lower().strip()
+                if norm_title in mu_list:
+                    merged['APC'] = "Free (DOAJ + MU Directory)"
+
+                final_data.append(merged)
+
+            except Exception as e:
+                print(f"Exception for {journal['Journal Title']}: {e}")
+
+            completed += 1
+            if completed % 100 == 0:
+                print(f"Processed {completed}/{total} journals")
 
     # 4. Create DataFrame
-    df = pd.DataFrame(scraped_data)
+    df = pd.DataFrame(final_data)
 
     # 5. Export Data
-    print("Exporting data...")
+    print(f"Exporting data to {OUTPUT_CSV} and {OUTPUT_XLSX}...")
     df.to_csv(OUTPUT_CSV, index=False)
     df.to_excel(OUTPUT_XLSX, index=False)
 
-    # 6. Visualize
-    print("Generating visualization...")
+    # 6. Visualization
+    print("Generating Scopus status visualization...")
     plt.figure(figsize=(10, 6))
     if 'Scopus Indexing' in df.columns:
         counts = df['Scopus Indexing'].value_counts()
@@ -236,28 +230,20 @@ def main():
         plt.ylabel('Count')
         plt.savefig(PLOT_FILE)
         plt.close()
-    else:
-        print("Scopus Indexing column missing, cannot plot.")
+        print(f"Visualization saved to {PLOT_FILE}")
 
     # 7. Summary
     print("\n" + "="*50)
     print("SUMMARY")
     print("="*50)
     print(f"Total Journals Processed: {len(df)}")
-    print(f"Data saved to {OUTPUT_CSV} and {OUTPUT_XLSX}")
-    print(f"Visualization saved to {PLOT_FILE}")
 
     missing_review = len(df[df['Review Time'] == 'Not Available'])
-    missing_apc = len(df[df['APC'] == 'Not Available']) # or Unknown
+    scopus_counts = df['Scopus Indexing'].value_counts().to_dict()
 
     print(f"Journals with missing Review Time: {missing_review}")
-    # print(f"Journals with missing APC info: {missing_apc}")
-
-    if 'Scopus Indexing' in df.columns:
-        print("\nScopus Indexing Distribution:")
-        print(df['Scopus Indexing'].value_counts())
-
-    print("\nProcess completed successfully.")
+    print(f"Scopus Indexing Status: {scopus_counts}")
+    print("\nData collected successfully.")
 
 if __name__ == "__main__":
     main()
