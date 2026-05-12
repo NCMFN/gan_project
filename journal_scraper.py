@@ -7,6 +7,8 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import re
 from urllib.parse import quote, urlparse, urlunparse
+import concurrent.futures
+import random
 
 # Constants
 BASE_URL = "https://journalsearches.com"
@@ -189,6 +191,18 @@ def scrape_journal_details(journal_url, apc_names, apc_issns):
         print(f"Error scraping {journal_url}: {e}")
         return None
 
+def process_journal(journal, apc_names, apc_issns):
+    """Wrapper to process a single journal with politeness delay."""
+    # Be polite
+    time.sleep(random.uniform(0.1, 0.3))
+
+    details = scrape_journal_details(journal['url'], apc_names, apc_issns)
+    if details:
+        # If we didn't get the title from page, use the one from link
+        if details['Journal Title'] == 'Not Available':
+            details['Journal Title'] = journal['title']
+    return details
+
 def main():
     # 1. Load APC Data
     apc_names, apc_issns = load_apc_data(APC_FILE)
@@ -203,19 +217,20 @@ def main():
     scraped_data = []
     print(f"Scraping details for {len(journal_list)} journals. This may take a while...")
 
-    for i, journal in enumerate(journal_list):
-        details = scrape_journal_details(journal['url'], apc_names, apc_issns)
-        if details:
-            # If we didn't get the title from page, use the one from link
-            if details['Journal Title'] == 'Not Available':
-                details['Journal Title'] = journal['title']
-            scraped_data.append(details)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=10) as executor:
+        future_to_journal = {executor.submit(process_journal, journal, apc_names, apc_issns): journal for journal in journal_list}
 
-        if (i + 1) % 10 == 0:
-            print(f"Processed {i + 1}/{len(journal_list)}")
+        for i, future in enumerate(concurrent.futures.as_completed(future_to_journal)):
+            try:
+                details = future.result()
+                if details:
+                    scraped_data.append(details)
+            except Exception as e:
+                journal = future_to_journal[future]
+                print(f"Error processing {journal['url']}: {e}")
 
-        # Be polite
-        time.sleep(0.5)
+            if (i + 1) % 10 == 0:
+                print(f"Processed {i + 1}/{len(journal_list)}")
 
     # 4. Create DataFrame
     df = pd.DataFrame(scraped_data)
