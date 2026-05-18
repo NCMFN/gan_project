@@ -150,7 +150,9 @@ def scrape_journal_details(journal_url, apc_names, apc_issns):
         else:
              # Try "Review Process" table logic if available?
              # Or look for "Time to First Decision" etc.
-             pass
+             fallback_match = re.search(r'(?:Time to First Decision|Review Time|Review Process)[:\s]*([\d-]+(?:\s*-\s*[\d-]+)?\s*(?:weeks?|days?|months?))', text, re.IGNORECASE)
+             if fallback_match:
+                 data['Review Time'] = fallback_match.group(1).strip()
 
         # Scopus Indexing
         # "Indexed in ... Scopus"
