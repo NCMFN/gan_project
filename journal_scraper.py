@@ -177,9 +177,29 @@ def scrape_journal_details(journal_url, apc_names, apc_issns):
             data['APC'] = "Free (Verified via Directory)"
         elif "does not charge any publication fee" in text.lower():
             data['APC'] = "Free (Stated on Website)"
-        elif "publication fee" in text.lower():
-             # extract fee? Hard to generalize.
-             data['APC'] = "Potential Fee"
+        elif re.search(r'\b(publication fees?|article processing charges?|apcs?|processing fees?|article processing fees?)\b', text.lower()):
+            lower_text = text.lower()
+            match = re.search(r'\b(publication fees?|article processing charges?|apcs?|processing fees?|article processing fees?)\b', lower_text)
+
+            fee_extracted = False
+            if match:
+                start_idx = match.end()
+                window = text[start_idx:start_idx+80] # lookahead window
+                currency_pattern = r'(?:USD|EUR|GBP|INR|\$|€|£|Rs\.?)'
+                amount_pattern = r'(?:\d{1,3}(?:,\d{3})*(?:\.\d+)?|\d+(?:\.\d+)?)(?!\d)'
+
+                fee_match1 = re.search(rf'({currency_pattern}\s*{amount_pattern})', window, re.IGNORECASE)
+                if fee_match1:
+                    data['APC'] = f"Fee: {fee_match1.group(1).strip()}"
+                    fee_extracted = True
+                else:
+                    fee_match2 = re.search(rf'({amount_pattern}\s*{currency_pattern})', window, re.IGNORECASE)
+                    if fee_match2:
+                        data['APC'] = f"Fee: {fee_match2.group(1).strip()}"
+                        fee_extracted = True
+
+            if not fee_extracted:
+                data['APC'] = "Potential Fee"
         else:
              data['APC'] = "Unknown"
 
