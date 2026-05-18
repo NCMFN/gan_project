@@ -144,13 +144,23 @@ def scrape_journal_details(journal_url, apc_names, apc_issns):
         # Review Time
         # Look for "Journal Publication Time" or "Review Time"
         # "publishes research articles in 12 weeks on an average"
-        time_match = re.search(r'publishes research articles in (\d+ weeks?)', text)
+        time_match = re.search(r'publishes research articles in (\d+ weeks?)', text, re.IGNORECASE)
         if time_match:
             data['Review Time'] = time_match.group(1)
         else:
-             # Try "Review Process" table logic if available?
-             # Or look for "Time to First Decision" etc.
-             pass
+            # Try "Review Process" table logic or look for "Time to First Decision"
+            decision_match = re.search(r'(?:Time to First Decision|Review Time|Review Process|First Decision)[\s:]*(\d+\s*(?:weeks?|days?|months?))', text, re.IGNORECASE)
+            if decision_match:
+                data['Review Time'] = decision_match.group(1).strip()
+            else:
+                # Apply standard estimates based on publisher
+                pub_lower = data.get('Publisher', '').lower()
+                if 'inderscience' in pub_lower:
+                    data['Review Time'] = '12-16 Weeks (Estimated)'
+                elif 'igi global' in pub_lower:
+                    data['Review Time'] = '8-12 Weeks (Estimated)'
+                else:
+                    data['Review Time'] = 'Not Available'
 
         # Scopus Indexing
         # "Indexed in ... Scopus"
