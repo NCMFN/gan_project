@@ -51,6 +51,7 @@ def get_journal_list():
         # "S. No. Journal Title Publisher ISSN Review Process"
 
         journals = []
+        seen_urls = set()
         # Find all rows or links. The links to journal details seem to be on the journal title.
         # Let's try to find all 'a' tags that link to 'journal.php'
 
@@ -79,7 +80,8 @@ def get_journal_list():
                 full_url = f"{BASE_URL}/{href}" if not href.startswith('http') else href
 
                 # Check if we already have this url (deduplication)
-                if not any(j['url'] == full_url for j in journals):
+                if full_url not in seen_urls:
+                    seen_urls.add(full_url)
                     journals.append({
                         'title': title,
                         'url': full_url
